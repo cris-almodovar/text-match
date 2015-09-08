@@ -14,5 +14,15 @@ namespace TextMatch
         {
             (field as Field).SetStringValue(value);
         }
+
+        public static IEnumerable<int> FullTextMatch(this IList<string> items, string queryExpression, int? topN = null)
+        {
+            using (var index = new FullTextIndex())
+            {
+                index.AddItems(items);              
+
+                return index.Search(queryExpression, topN);
+            }
+        }
     }
 }
