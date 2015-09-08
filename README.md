@@ -1,2 +1,2 @@
 # text-match
-Text content matching powered by Lucene search
+Full-text search on lists of strings/objects, powered by FlexLucene
