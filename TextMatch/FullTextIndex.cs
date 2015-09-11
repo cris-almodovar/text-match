@@ -19,16 +19,15 @@ namespace TextMatch
         private IndexWriter _writer;
         private DirectoryReader _reader;
         private QueryParser _queryParser;
-        private IndexSearcher _searcher;        
-        private const string DEFAULT_STOP_TOKENS_PATTERN = @"[\s,:;.()?!]";
+        private IndexSearcher _searcher; 
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FullTextIndex"/> class.
         /// </summary>
-        public FullTextIndex(bool enableStemming = true, bool ignoreCase = true)
+        public FullTextIndex(bool enableStemming = true, bool ignoreCase = true, string stopTokensPattern = null)
         {
-            _directory = new RAMDirectory();            
-            _analyzer = new CustomAnalyzer(DEFAULT_STOP_TOKENS_PATTERN, enableStemming, ignoreCase);            
+            _directory = new RAMDirectory();
+            _analyzer = new CustomAnalyzer(stopTokensPattern, enableStemming, ignoreCase);            
 
             var config = new IndexWriterConfig(_analyzer);
             _writer = new IndexWriter(_directory, config);
