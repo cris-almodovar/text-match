@@ -15,7 +15,7 @@ namespace TextMatch
         private string _stopTokensPattern;
         private bool _enableStemming;
         private bool _ignoreCase;
-        private const string DEFAULT_STOP_TOKENS_PATTERN = @"[\s,:;.()?!\-']";
+        private const string DEFAULT_STOP_TOKENS_PATTERN = @"[\s,:;.()?!+{}\[\]<>\-'""]";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CustomAnalyzer" /> class.
