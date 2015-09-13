@@ -2,20 +2,22 @@
 using FlexLucene.Analysis.Core;
 using FlexLucene.Analysis.En;
 using FlexLucene.Analysis.Pattern;
+using FlexLucene.Analysis.Tokenattributes;
 using java.util.regex;
 using System;
+using System.Collections.Generic;
 
 namespace TextMatch
 {
     /// <summary>
     /// Analyzer that uses the Porter stemming algorithm for English text.
     /// </summary>
-    class CustomAnalyzer : Analyzer
+    public class CustomAnalyzer : Analyzer
     {
         private string _stopTokensPattern;
         private bool _enableStemming;
         private bool _ignoreCase;
-        private const string DEFAULT_STOP_TOKENS_PATTERN = @"[\s,:;.()?!+{}\[\]<>\-'""]";
+        public const string DEFAULT_STOP_TOKENS_PATTERN = @"[\s,:;.()?!+{}\[\]<>\-'""]";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CustomAnalyzer" /> class.
@@ -43,6 +45,22 @@ namespace TextMatch
                 stream = new PorterStemFilter(stream);          
 
             return new TokenStreamComponents(tokenizer, stream);
+        }
+
+        public static IEnumerable<string> Tokenize(string text, string stopTokensPattern = DEFAULT_STOP_TOKENS_PATTERN, bool enableStemming = true, bool ignoreCase = true)
+        {
+            var analyzer = new CustomAnalyzer(stopTokensPattern, enableStemming, ignoreCase);
+
+            TokenStream stream = analyzer.TokenStream("text", text);
+            CharTermAttribute attrib = stream.AddAttribute(java.lang.Class.forName("FlexLucene.Analysis.Tokenattributes.CharTermAttribute")) as CharTermAttribute;
+
+            stream.Reset();
+            while (stream.incrementToken())
+            {
+                yield return attrib.toString();
+            }
+            stream.End();
+            stream.Close();
         }
     }
 }

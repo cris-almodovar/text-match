@@ -68,5 +68,16 @@ namespace TextMatch.Tests
             result = _apodArticles.FullTextMatch("china observation station in antartica");
             Assert.AreEqual<int>(result[0], 14);    // Article #14 should come up on top
         }
+
+        [TestMethod]
+        public void Can_Tokenize_Text()
+        {            
+            var textTokens = FullTextIndex.Tokenize(_apodArticles[0]);
+            var queryTokens = FullTextIndex.Tokenize("swift tuttle comet");
+
+            var matchingTerms = textTokens.Intersect(queryTokens);
+
+            Assert.IsTrue(matchingTerms.Count() > 0);
+        }
     }
 }

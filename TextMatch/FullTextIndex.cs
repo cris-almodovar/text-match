@@ -1,4 +1,5 @@
 ﻿using FlexLucene.Analysis;
+using FlexLucene.Analysis.Tokenattributes;
 using FlexLucene.Document;
 using FlexLucene.Index;
 using FlexLucene.Queryparser.Classic;
@@ -96,6 +97,12 @@ namespace TextMatch
                     _searcher = new IndexSearcher(_reader);
                 }
             }
+        }
+
+        public static IEnumerable<string> Tokenize(string text, string stopTokensPattern = CustomAnalyzer.DEFAULT_STOP_TOKENS_PATTERN, bool enableStemming = true, bool ignoreCase = true)
+        {
+            return CustomAnalyzer.Tokenize(text, stopTokensPattern, enableStemming, ignoreCase);       
+            
         }
 
         public void Dispose()
