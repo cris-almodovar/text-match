@@ -44,7 +44,7 @@ namespace TextMatch.Tests
         public void Can_Use_FullTextIndex_Directly()
         {
             var index = new FullTextIndex();
-            index.AddItems(_apodArticles);
+            index.Add(_apodArticles);
 
             var result =  index.Search("magellanic nebula visible in southern skies").ToList();    
             Assert.AreEqual<int>(result[0], 10);   // Article #10 should come up on top
@@ -56,17 +56,25 @@ namespace TextMatch.Tests
             Assert.AreEqual<int>(result[0], 14);    // Article #14 should come up on top
         }
 
-        [TestMethod]
+        [TestMethod]        
         public void Can_Use_Ext_Method_On_List()
         {
             var result = _apodArticles.FullTextMatch("magellanic nebula visible in southern skies");
             Assert.AreEqual<int>(result[0], 10);   // Article #10 should come up on top
 
-            result = _apodArticles.FullTextMatch("swift tuttle comet");
+            result = _apodArticles.FullTextMatch("swift /tuttle comet");
             Assert.AreEqual<int>(result[0], 0);    // Article #0 should come up on top
 
             result = _apodArticles.FullTextMatch("china observation station in antartica");
             Assert.AreEqual<int>(result[0], 14);    // Article #14 should come up on top
+        }
+
+        [TestMethod]
+        //[ExpectedException(typeof())]
+        public void Invalid_Query_Produces_Exception()
+        {
+            var result = _apodArticles.FullTextMatch("FlexLucene.Queryparser.Classic.ParseException' ");
+            Assert.AreEqual<int>(result[0], 10);   // Article #10 should come up on top
         }
 
         [TestMethod]

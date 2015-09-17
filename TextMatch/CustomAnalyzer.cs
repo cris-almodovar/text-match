@@ -14,30 +14,30 @@ namespace TextMatch
     /// </summary>
     public class CustomAnalyzer : Analyzer
     {
-        private string _stopTokensPattern;
+        private string _stopTokensRegex;
         private bool _enableStemming;
         private bool _ignoreCase;
-        public const string DEFAULT_STOP_TOKENS_PATTERN = @"[\s,:;.()?!+{}\[\]<>\-'""]";
+        public const string DEFAULT_STOP_TOKENS_REGEX = @"[\s,:;.()?!+{}\[\]<>\-'""]";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CustomAnalyzer" /> class.
         /// </summary>
-        /// <param name="stopTokensPattern">A regular expression that will be used to tokenize the input text.</param>
+        /// <param name="stopTokensRegex">A regular expression that will be used to break up the text into tokenize.</param>
         /// <param name="enableStemming">if set to <c>true</c> the tokens generated will be stemmed using the Porter stemming algorithm.</param>
-        /// <param name="ignoreCase">if set to <c>true</c> the tokens generated will be converted to lowercase, to faciliate case-insensitive search.</param>
-        public CustomAnalyzer(string stopTokensPattern = DEFAULT_STOP_TOKENS_PATTERN, bool enableStemming = true, bool ignoreCase = true)
+        /// <param name="ignoreCase">if set to <c>true</c> the tokens generated will be converted to lowercase, to enforce case-insensitive search.</param>
+        public CustomAnalyzer(string stopTokensRegex = DEFAULT_STOP_TOKENS_REGEX, bool enableStemming = true, bool ignoreCase = true)
         {
-            if (String.IsNullOrWhiteSpace(stopTokensPattern))
-                stopTokensPattern = DEFAULT_STOP_TOKENS_PATTERN;
+            if (String.IsNullOrWhiteSpace(stopTokensRegex))
+                stopTokensRegex = DEFAULT_STOP_TOKENS_REGEX;
 
-            _stopTokensPattern = stopTokensPattern;
+            _stopTokensRegex = stopTokensRegex;
             _enableStemming = enableStemming;
             _ignoreCase = ignoreCase;
         }
 
         protected override TokenStreamComponents createComponents(string fieldName)
         {            
-            var pattern = Pattern.compile(_stopTokensPattern);
+            var pattern = Pattern.compile(_stopTokensRegex);
             var tokenizer = new PatternTokenizer(pattern, -1);
             var stream = _ignoreCase ? new LowerCaseFilter(tokenizer) as TokenStream : tokenizer as TokenStream;
 
@@ -47,9 +47,17 @@ namespace TextMatch
             return new TokenStreamComponents(tokenizer, stream);
         }
 
-        public static IEnumerable<string> Tokenize(string text, string stopTokensPattern = DEFAULT_STOP_TOKENS_PATTERN, bool enableStemming = true, bool ignoreCase = true)
+        /// <summary>
+        /// Breaks up the text into tokens.
+        /// </summary>
+        /// <param name="text">The text.</param>
+        /// <param name="stopTokensRegex">The stop tokens regex to be used in breaking up the text.</param>
+        /// <param name="enableStemming">if set to <c>true</c> the tokens generated will be stemmed using the Porter stemming algorithm.</param>    
+        /// <param name="ignoreCase">if set to <c>true</c> the tokens generated will be converted to lowercase, to enforce case-insensitive search.</param>
+        /// <returns></returns>
+        public static IEnumerable<string> Tokenize(string text, string stopTokensRegex = DEFAULT_STOP_TOKENS_REGEX, bool enableStemming = true, bool ignoreCase = true)
         {
-            var analyzer = new CustomAnalyzer(stopTokensPattern, enableStemming, ignoreCase);
+            var analyzer = new CustomAnalyzer(stopTokensRegex, enableStemming, ignoreCase);
 
             TokenStream stream = analyzer.TokenStream("text", text);
             CharTermAttribute attrib = stream.AddAttribute(java.lang.Class.forName("FlexLucene.Analysis.Tokenattributes.CharTermAttribute")) as CharTermAttribute;
