@@ -1,6 +1,7 @@
 ﻿using FlexLucene.Document;
 using FlexLucene.Index;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,6 +25,8 @@ namespace TextMatch
         /// <returns>A list of document numbers, containing the items that satisfy the query expression.</returns>
         public static IList<int> FullTextMatch(this IList<string> texts, string queryExpression, int? topN = null)
         {
+            // TODO: Use PLINQ for large number of texts.
+
             using (var index = new FullTextIndex())
             {
                 index.Add(texts);              
