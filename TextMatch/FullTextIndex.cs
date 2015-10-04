@@ -7,6 +7,7 @@ using FlexLucene.Search;
 using FlexLucene.Store;
 using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace TextMatch
 {
@@ -79,21 +80,35 @@ namespace TextMatch
         {
             RefreshReader();
 
-            var query = _queryParser.Parse(queryExpression);
-            var maxDocs = topN ?? _reader.NumDocs();
+            Query query = null;       
+            try
+            {
+                query = _queryParser.Parse(queryExpression);
 
-            var topDocs = _searcher.Search(query, maxDocs);
+            }
+            catch (ParseException e)
+            {
+                throw new InvalidQueryException(String.Format("The queryExpression is invalid: {0}.", queryExpression), e);
+            }
+
+            if (query == null)
+                throw new InvalidQueryException("The query expression is not initialized.");
+
+            var maxDocs = topN ?? _reader.NumDocs();
+            var topDocs = _searcher.Search(query, maxDocs);            
 
             if (topDocs.TotalHits > 0)
-            {
-                foreach (var sd in topDocs.ScoreDocs)
                 {
-                    var doc = _searcher.Doc(sd.Doc);
-                    var id = doc.GetField("id").stringValue();
+                    foreach (var sd in topDocs.ScoreDocs)
+                    {
+                        var doc = _searcher.Doc(sd.Doc);
+                        var id = doc.GetField("id").stringValue();
 
-                    yield return Int32.Parse(id);
+                        yield return Int32.Parse(id);
+                    }
                 }
-            }
+            
+
         }
 
         private void RefreshReader()
@@ -132,6 +147,18 @@ namespace TextMatch
         {
             _reader.Close();
             _writer.Close();
+        }        
+    }
+
+    [Serializable]
+    public class InvalidQueryException : Exception
+    {
+        public InvalidQueryException(string message) : base(message)
+        {
         }
+
+        public InvalidQueryException(string message, Exception innerException) : base(message, innerException)
+        {
+        }       
     }
 }

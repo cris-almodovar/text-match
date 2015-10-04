@@ -70,11 +70,11 @@ namespace TextMatch.Tests
         }
 
         [TestMethod]
-        //[ExpectedException(typeof())]
+        [ExpectedException(typeof(InvalidQueryException))]
         public void Invalid_Query_Produces_Exception()
         {
-            var result = _apodArticles.FullTextMatch("FlexLucene.Queryparser.Classic.ParseException' ");
-            Assert.AreEqual<int>(result[0], 10);   // Article #10 should come up on top
+            var result = _apodArticles.FullTextMatch("this/is invalid because of un-escaped slash");
+            Assert.AreEqual<int>(result.Count(), 0);   
         }
 
         [TestMethod]

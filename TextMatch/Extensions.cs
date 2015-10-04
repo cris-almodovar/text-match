@@ -25,7 +25,7 @@ namespace TextMatch
         /// <returns>A list of document numbers, containing the items that satisfy the query expression.</returns>
         public static IList<int> FullTextMatch(this IList<string> texts, string queryExpression, int? topN = null)
         {
-            // TODO: Use PLINQ for large number of texts.
+            // TODO: Use PLINQ if texts.Count > n
 
             using (var index = new FullTextIndex())
             {
