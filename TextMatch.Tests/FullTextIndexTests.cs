@@ -49,7 +49,7 @@ namespace TextMatch.Tests
             var result =  index.Search("magellanic nebula visible in southern skies").ToList();    
             Assert.AreEqual<int>(result[0], 10);   // Article #10 should come up on top
 
-            result = index.Search("swift tuttle comet").ToList();
+            result = index.Search("swift-tuttle comet").ToList();
             Assert.AreEqual<int>(result[0], 0);    // Article #0 should come up on top
 
             result = index.Search("china observation station in antartica").ToList();
@@ -62,7 +62,7 @@ namespace TextMatch.Tests
             var result = _apodArticles.FullTextMatch("magellanic nebula visible in southern skies");
             Assert.AreEqual<int>(result[0], 10);   // Article #10 should come up on top
 
-            result = _apodArticles.FullTextMatch("swift /tuttle comet");
+            result = _apodArticles.FullTextMatch(@"""swift tuttle"" AND comet");
             Assert.AreEqual<int>(result[0], 0);    // Article #0 should come up on top
 
             result = _apodArticles.FullTextMatch("china observation station in antartica");
@@ -81,11 +81,37 @@ namespace TextMatch.Tests
         public void Can_Tokenize_Text()
         {            
             var textTokens = FullTextIndex.Tokenize(_apodArticles[0]);
-            var queryTokens = FullTextIndex.Tokenize("swift tuttle comet");
+            var queryTokens = FullTextIndex.Tokenize(@"""swift tuttle"" AND comet");
 
-            var matchingTerms = textTokens.Intersect(queryTokens);
+            var matchingTerms = textTokens.Intersect(queryTokens);  // The text and the query must have common tokens
 
             Assert.IsTrue(matchingTerms.Count() > 0);
+        }
+
+        [TestMethod]
+        public void Words_Are_Stemmed()
+        {
+            var text = "While jogging last night, I saw a rocketship streaking across the dark moonless sky - at five times the speed of sound!!!";
+            var tokens = FullTextIndex.Tokenize(text);
+
+            var expected = "while jog last night i saw a rocketship streak across the dark moonless sky at five time the speed of sound";
+            var actual = String.Join(" ", tokens.ToArray());
+
+            Assert.AreEqual(expected, actual);
+        }
+
+        [TestMethod]
+        public void Can_Use_Proximity_Search()
+        {
+            var text = "While jogging last night, I saw a rocketship streaking across the dark moonless sky - at five times the speed of sound!!!";
+            var query = @"""rocketship dark sky""~3";
+
+            var result = new[] { text }.FullTextMatch(query);
+
+            var expected = 0;
+            var actual = result.Count() > 0 ? result[0] : -1;
+
+            Assert.AreEqual(expected, actual);
         }
     }
 }

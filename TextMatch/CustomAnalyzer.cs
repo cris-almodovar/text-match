@@ -17,7 +17,7 @@ namespace TextMatch
         private string _stopTokensRegex;
         private bool _enableStemming;
         private bool _ignoreCase;
-        public const string DEFAULT_STOP_TOKENS_REGEX = @"[\s,:;.()?!+{}\[\]<>\-'""]";
+        public const string DEFAULT_STOP_TOKENS_REGEX = @"[\s,:;.()?!@#%^&*|/+÷°±{}\[\]<>\-`~'""$£€¢¥©®™•§†‡–—¶]";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CustomAnalyzer" /> class.
