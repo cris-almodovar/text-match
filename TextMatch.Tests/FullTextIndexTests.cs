@@ -43,9 +43,14 @@ namespace TextMatch.Tests
         [TestMethod]
         public void Can_Use_FullTextIndex_Directly()
         {
+            // First we create an instance of FullTextIndex
             var index = new FullTextIndex();
+
+            // Then we add texts to the index
             index.Add(_apodArticles);
 
+            // After adding we can Search for texts that match a Lucene query expression
+            // See https://lucene.apache.org/core/2_9_4/queryparsersyntax.html for a reference on Lucene query syntax
             var result =  index.Search("magellanic nebula visible in southern skies").ToList();    
             Assert.AreEqual<int>(result[0], 10);   // Article #10 should come up on top
 
@@ -59,6 +64,9 @@ namespace TextMatch.Tests
         [TestMethod]        
         public void Can_Use_Ext_Method_On_List()
         {
+            // Here we don't instantiate the FullTextIndex directly,
+            // but instead use the FullTextMatch() extension method.         
+
             var result = _apodArticles.FullTextMatch("magellanic nebula visible in southern skies");
             Assert.AreEqual<int>(result[0], 10);   // Article #10 should come up on top
 
@@ -73,7 +81,9 @@ namespace TextMatch.Tests
         [ExpectedException(typeof(InvalidQueryException))]
         public void Invalid_Query_Produces_Exception()
         {
-            var result = _apodArticles.FullTextMatch("this/is invalid because of un-escaped slash");
+            // The below query will fail with an InvalidQueryExpression because the slash character
+            // is used to delimit a regex query in Lucene.
+            var result = _apodArticles.FullTextMatch("this/is invalid because of un-escaped slash").ToList();
             Assert.AreEqual<int>(result.Count(), 0);   
         }
 
@@ -83,7 +93,9 @@ namespace TextMatch.Tests
             var textTokens = FullTextIndex.Tokenize(_apodArticles[0]);
             var queryTokens = FullTextIndex.Tokenize(@"""swift tuttle"" AND comet");
 
-            var matchingTerms = textTokens.Intersect(queryTokens);  // The text and the query must have common tokens
+            // The text and the query must have tokenized words in common
+            // in order for them to match.
+            var matchingTerms = textTokens.Intersect(queryTokens);  
 
             Assert.IsTrue(matchingTerms.Count() > 0);
         }
@@ -91,10 +103,12 @@ namespace TextMatch.Tests
         [TestMethod]
         public void Words_Are_Stemmed()
         {
-            var text = "While jogging last night, I saw a rocketship streaking across the dark moonless sky - at five times the speed of sound!!!";
+            // Stemming minimizes variations in words due to tense (i.e. past, present, future), pluralization, etc.
+            // We use the Porter stemming algorithm, which is for English text.
+            var text = "While jogging last night, I saw rocketships streaking across the dark moonless sky - at five times the speed of sound!!!";
             var tokens = FullTextIndex.Tokenize(text);
 
-            var expected = "while jog last night i saw a rocketship streak across the dark moonless sky at five time the speed of sound";
+            var expected = "while jog last night i saw rocketship streak across the dark moonless sky at five time the speed of sound";
             var actual = String.Join(" ", tokens.ToArray());
 
             Assert.AreEqual(expected, actual);
@@ -103,8 +117,9 @@ namespace TextMatch.Tests
         [TestMethod]
         public void Can_Use_Proximity_Search()
         {
+            // Use proximity search to search for occurrence of words within N words from each other
             var text = "While jogging last night, I saw a rocketship streaking across the dark moonless sky - at five times the speed of sound!!!";
-            var query = @"""rocketship dark sky""~3";
+            var query = @"""rocketship dark sky""~4";
 
             var result = new[] { text }.FullTextMatch(query);
 
