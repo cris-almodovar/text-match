@@ -83,7 +83,7 @@ namespace TextMatch.Tests
         {
             // The below query will fail with an InvalidQueryExpression because the slash character
             // is used to delimit a regex query in Lucene.
-            var result = _apodArticles.FullTextMatch("this/is invalid because of un-escaped slash").ToList();
+            var result = _apodArticles.FullTextMatch("this/is invalid because of un-escaped slash");
             Assert.AreEqual<int>(result.Count(), 0);   
         }
 
@@ -127,6 +127,27 @@ namespace TextMatch.Tests
             var actual = result.Count() > 0 ? result[0] : -1;
 
             Assert.AreEqual(expected, actual);
+        }
+
+        [TestMethod]
+        public void Can_Match_Multiple_Expressions_To_Single_Text()
+        {
+            // We can have one text and run it against a list of query expressions
+            var text = "While jogging last night, I saw a rocketship streaking across the dark moonless sky - at five times the speed of sound!!!";        
+            var queryExpressions = new[]
+            {
+                @"""rocketship dark sky""~4",
+                "jogging at night",
+                "speed of sound",
+                "(meteor shower) OR perseid"
+            };
+
+            var result = text.FullTextMatch(queryExpressions);
+
+            var expected = new List<int> { 0, 1, 2 };
+            var actual = result;
+
+            Assert.IsTrue(expected.SequenceEqual(actual));
         }
     }
 }

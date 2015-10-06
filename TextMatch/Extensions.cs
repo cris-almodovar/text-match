@@ -22,16 +22,52 @@ namespace TextMatch
         /// <param name="texts">The list of texts to be searched.</param>
         /// <param name="queryExpression">The Lucene query expression.</param>
         /// <param name="topN">The top N records to be returned</param>
-        /// <returns>A list of document numbers, containing the items that satisfy the query expression.</returns>
+        /// <returns>
+        /// A list of numbers representing the index number of the text
+        /// that matched the query expression.
+        /// </returns>
         public static IList<int> FullTextMatch(this IList<string> texts, string queryExpression, int? topN = null)
         {
-            // TODO: Use PLINQ if texts.Count > n
-
             using (var index = new FullTextIndex())
             {
                 index.Add(texts);              
 
-                return index.Search(queryExpression, topN).ToList();
+                return index.Search(queryExpression, (topN ?? texts.Count)).ToList();
+            }
+        }
+
+        /// <summary>
+        /// Performs a full-text search on the single text item.
+        /// </summary>
+        /// <param name="text">The text to be searched.</param>
+        /// <param name="queryExpressions">The Lucene query expressions.</param>
+        /// <param name="topN">The top N records to be returned</param>
+        /// <returns>
+        /// A list of numbers representing the index number of the query expression
+        /// that matched the text.
+        /// </returns>
+        public static IList<int> FullTextMatch(this string text, IList<string> queryExpressions, int? topN = null)
+        {
+            using (var index = new FullTextIndex())
+            {
+                index.Add(text);
+                
+                var topM = queryExpressions.Count;
+                var matchingExpressions = new List<int>();
+
+                for (var i = 0; i < queryExpressions.Count; i++)
+                {
+                    var query = queryExpressions[i];
+
+                    if (index.Search(query).Count() > 0)
+                    {
+                        matchingExpressions.Add(i);
+                        if (matchingExpressions.Count >= topM)
+                            break;                       
+                    }                   
+                }
+
+                return matchingExpressions;                
             }
         }
     }

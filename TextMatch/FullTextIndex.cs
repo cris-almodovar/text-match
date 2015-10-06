@@ -1,5 +1,4 @@
 ﻿using FlexLucene.Analysis;
-using FlexLucene.Analysis.Tokenattributes;
 using FlexLucene.Document;
 using FlexLucene.Index;
 using FlexLucene.Queryparser.Classic;
@@ -7,7 +6,6 @@ using FlexLucene.Search;
 using FlexLucene.Store;
 using System;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
 
 namespace TextMatch
 {
@@ -61,6 +59,15 @@ namespace TextMatch
             _writer.Commit();
         }
 
+        /// <summary>
+        /// Adds a single text item to the index.
+        /// </summary>
+        /// <param name="text">The text to add.</param>
+        public void Add(string text)
+        {
+            Add(new[] { text });
+        }
+
         private Document CreateDocument()
         {
             var document = new Document();
@@ -98,16 +105,15 @@ namespace TextMatch
             var topDocs = _searcher.Search(query, maxDocs);            
 
             if (topDocs.TotalHits > 0)
+            {
+                foreach (var sd in topDocs.ScoreDocs)
                 {
-                    foreach (var sd in topDocs.ScoreDocs)
-                    {
-                        var doc = _searcher.Doc(sd.Doc);
-                        var id = doc.GetField("id").stringValue();
+                    var doc = _searcher.Doc(sd.Doc);                    
+                    var id = doc.GetField("id").stringValue();
 
-                        yield return Int32.Parse(id);
-                    }
+                    yield return Int32.Parse(id);
                 }
-            
+            }           
 
         }
 
