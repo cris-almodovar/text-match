@@ -23,8 +23,8 @@ namespace TextMatch
         /// <param name="queryExpression">The Lucene query expression.</param>
         /// <param name="topN">The top N records to be returned</param>
         /// <returns>
-        /// A list of numbers representing the index number of the text
-        /// that matched the query expression.
+        /// A MatchResult object containing the status of the operation, and if successful,
+        /// a list of numbers representing the index number of the text  that matched the query expression.
         /// </returns>
         public static MatchResult Match(this IList<string> texts, string queryExpression, int? topN = null)
         {
