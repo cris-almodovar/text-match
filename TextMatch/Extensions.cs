@@ -26,13 +26,13 @@ namespace TextMatch
         /// A list of numbers representing the index number of the text
         /// that matched the query expression.
         /// </returns>
-        public static IList<int> FullTextMatch(this IList<string> texts, string queryExpression, int? topN = null)
+        public static MatchResult Match(this IList<string> texts, string queryExpression, int? topN = null)
         {
             using (var index = new FullTextIndex())
             {
-                index.Add(texts);              
-
-                return index.Search(queryExpression, (topN ?? texts.Count)).ToList();
+                index.Add(texts);                  
+                var docIds = index.Search(queryExpression, (topN ?? texts.Count)).ToList();
+                return new MatchResult(docIds);
             }
         }
 
@@ -43,10 +43,10 @@ namespace TextMatch
         /// <param name="queryExpressions">The Lucene query expressions.</param>
         /// <param name="topN">The top N records to be returned</param>
         /// <returns>
-        /// A list of numbers representing the index number of the query expression
-        /// that matched the text.
+        /// A MatchResult object containing the status of the operation, and if successful,
+        /// a list of numbers representing the index number of the query expression that matched the text.
         /// </returns>
-        public static IList<int> FullTextMatch(this string text, IList<string> queryExpressions, int? topN = null)
+        public static MatchResult Match(this string text, IList<string> queryExpressions, int? topN = null)
         {
             using (var index = new FullTextIndex())
             {
@@ -67,7 +67,7 @@ namespace TextMatch
                     }                   
                 }
 
-                return matchingExpressions;                
+                return new MatchResult(matchingExpressions);                              
             }
         }
     }

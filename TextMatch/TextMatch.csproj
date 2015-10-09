@@ -159,6 +159,7 @@
     <Compile Include="Extensions.cs" />
     <Compile Include="FullTextIndex.cs" />
     <Compile Include="CustomAnalyzer.cs" />
+    <Compile Include="MatchResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

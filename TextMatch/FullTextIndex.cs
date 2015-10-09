@@ -16,10 +16,9 @@ namespace TextMatch
     {
         private Directory _directory;
         private Analyzer _analyzer;
-        private IndexWriter _writer;
-        private DirectoryReader _reader;
-        private QueryParser _queryParser;
-        private IndexSearcher _searcher;
+        private IndexWriter _writer;        
+        private QueryParser _queryParser;        
+        private SearcherManager _searcherManager;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FullTextIndex" /> class.
@@ -34,11 +33,9 @@ namespace TextMatch
 
             var config = new IndexWriterConfig(_analyzer);
             _writer = new IndexWriter(_directory, config);
+            _searcherManager = new SearcherManager(_writer, true, null);
 
-            _reader = DirectoryReader.Open(_writer, true);
-
-            _queryParser = new QueryParser("text", _analyzer);
-            _searcher = new IndexSearcher(_reader);            
+            _queryParser = new QueryParser("text", _analyzer); 
         }
 
         /// <summary>
@@ -57,6 +54,7 @@ namespace TextMatch
             }
 
             _writer.Commit();
+            _searcherManager.MaybeRefresh();
         }
 
         /// <summary>
@@ -84,9 +82,7 @@ namespace TextMatch
         /// <param name="topN">The limit on the number of matching texts to return.</param>
         /// <returns></returns>
         public IEnumerable<int> Search(string queryExpression, int? topN = null)
-        {
-            RefreshReader();
-
+        { 
             Query query = null;       
             try
             {
@@ -101,37 +97,29 @@ namespace TextMatch
             if (query == null)
                 throw new InvalidQueryException("The query expression is not initialized.");
 
-            var maxDocs = topN ?? _reader.NumDocs();
-            var topDocs = _searcher.Search(query, maxDocs);            
-
-            if (topDocs.TotalHits > 0)
+            var searcher = _searcherManager.Acquire() as IndexSearcher;
+            try
             {
-                foreach (var sd in topDocs.ScoreDocs)
+                var maxDocs = topN ?? Int32.MaxValue;
+                var topDocs = searcher.Search(query, maxDocs);
+
+                if (topDocs.TotalHits > 0)
                 {
-                    var doc = _searcher.Doc(sd.Doc);                    
-                    var id = doc.GetField("id").stringValue();
+                    foreach (var sd in topDocs.ScoreDocs)
+                    {
+                        var doc = searcher.Doc(sd.Doc);
+                        var id = doc.GetField("id").stringValue();
 
-                    yield return Int32.Parse(id);
-                }
-            }           
-
-        }
-
-        private void RefreshReader()
-        {
-            var updatedReader = DirectoryReader.OpenIfChanged(_reader, _writer, true);
-            if (updatedReader != null)
-            {
-                lock (_reader)
-                {
-                    var oldReader = _reader;
-                    _reader = updatedReader;
-
-                    oldReader.Close();
-                    _searcher = new IndexSearcher(_reader);
+                        yield return Int32.Parse(id);
+                    }
                 }
             }
+            finally
+            {
+                _searcherManager.Release(searcher);
+            } 
         }
+        
 
         /// <summary>
         /// Breaks up the specified text into tokens.
@@ -151,7 +139,8 @@ namespace TextMatch
         /// </summary>
         public void Dispose()
         {
-            _reader.Close();
+            //_reader.Close();
+            _searcherManager.Close();
             _writer.Close();
         }        
     }

@@ -51,14 +51,23 @@ namespace TextMatch.Tests
 
             // After adding we can Search for texts that match a Lucene query expression
             // See https://lucene.apache.org/core/2_9_4/queryparsersyntax.html for a reference on Lucene query syntax
-            var result =  index.Search("magellanic nebula visible in southern skies").ToList();    
-            Assert.AreEqual<int>(result[0], 10);   // Article #10 should come up on top
+            var result =  index.Search("magellanic nebula visible in southern skies").ToList();
+            var expected = 10;
+            var actual = result.Count > 0 ? result[0] : -1;
+
+            Assert.AreEqual<int>(expected, actual);   // Article #10 should come up on top
 
             result = index.Search("swift-tuttle comet").ToList();
-            Assert.AreEqual<int>(result[0], 0);    // Article #0 should come up on top
+            expected = 0;
+            actual = result.Count > 0 ? result[0] : -1;
+
+            Assert.AreEqual<int>(expected, actual);    // Article #0 should come up on top
 
             result = index.Search("china observation station in antartica").ToList();
-            Assert.AreEqual<int>(result[0], 14);    // Article #14 should come up on top
+            expected = 14;
+            actual = result.Count > 0 ? result[0] : -1;
+
+            Assert.AreEqual<int>(expected, actual);    // Article #14 should come up on top
         }
 
         [TestMethod]        
@@ -67,14 +76,23 @@ namespace TextMatch.Tests
             // Here we don't instantiate the FullTextIndex directly,
             // but instead use the FullTextMatch() extension method.         
 
-            var result = _apodArticles.FullTextMatch("magellanic nebula visible in southern skies");
-            Assert.AreEqual<int>(result[0], 10);   // Article #10 should come up on top
+            var result = _apodArticles.Match("magellanic nebula visible in southern skies");
+            var expected = 10;
+            var actual = result.Success ? result[0] : -1;
 
-            result = _apodArticles.FullTextMatch(@"""swift tuttle"" AND comet");
-            Assert.AreEqual<int>(result[0], 0);    // Article #0 should come up on top
+            Assert.AreEqual<int>(expected, actual);   // Article #10 should come up on top
 
-            result = _apodArticles.FullTextMatch("china observation station in antartica");
-            Assert.AreEqual<int>(result[0], 14);    // Article #14 should come up on top
+            result = _apodArticles.Match(@"""swift tuttle"" AND comet");
+            expected = 0;
+            actual = result.Success ? result[0] : -1;
+
+            Assert.AreEqual<int>(expected, actual);    // Article #0 should come up on top
+
+            result = _apodArticles.Match("china observation station in antartica");
+            expected = 14;
+            actual = result.Success ? result[0] : -1;
+
+            Assert.AreEqual<int>(expected, actual);    // Article #14 should come up on top
         }
 
         [TestMethod]
@@ -83,8 +101,11 @@ namespace TextMatch.Tests
         {
             // The below query will fail with an InvalidQueryExpression because the slash character
             // is used to delimit a regex query in Lucene.
-            var result = _apodArticles.FullTextMatch("this/is invalid because of un-escaped slash");
-            Assert.AreEqual<int>(result.Count(), 0);   
+            var result = _apodArticles.Match("this/is invalid because of un-escaped slash");
+            var expected = false;
+            var actual = result.Success;
+
+            Assert.AreEqual<bool>(expected, actual);   
         }
 
         [TestMethod]
@@ -95,7 +116,7 @@ namespace TextMatch.Tests
 
             // The text and the query must have tokenized words in common
             // in order for them to match.
-            var matchingTerms = textTokens.Intersect(queryTokens);  
+            var matchingTerms = textTokens.Intersect(queryTokens); 
 
             Assert.IsTrue(matchingTerms.Count() > 0);
         }
@@ -121,10 +142,9 @@ namespace TextMatch.Tests
             var text = "While jogging last night, I saw a rocketship streaking across the dark moonless sky - at five times the speed of sound!!!";
             var query = @"""rocketship dark sky""~4";
 
-            var result = new[] { text }.FullTextMatch(query);
-
+            var result = new[] { text }.Match(query);
             var expected = 0;
-            var actual = result.Count() > 0 ? result[0] : -1;
+            var actual = result.Success ? result[0] : -1;
 
             Assert.AreEqual(expected, actual);
         }
@@ -142,8 +162,7 @@ namespace TextMatch.Tests
                 "(meteor shower) OR perseid"
             };
 
-            var result = text.FullTextMatch(queryExpressions);
-
+            var result = text.Match(queryExpressions);
             var expected = new List<int> { 0, 1, 2 };
             var actual = result;
 
