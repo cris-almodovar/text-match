@@ -99,9 +99,9 @@ namespace TextMatch.Tests
         [ExpectedException(typeof(InvalidQueryException))]
         public void Invalid_Query_Produces_Exception()
         {
-            // The below query will fail with an InvalidQueryExpression because the slash character
-            // is used to delimit a regex query in Lucene.
-            var result = _apodArticles.Match("this/is invalid because of un-escaped slash");
+            // The below query will fail with an InvalidQueryExpression because of
+            // the open square bracket.
+            var result = _apodArticles.Match("this [is invalid because of the open square bracket");
             var expected = false;
             var actual = result.Success;
 

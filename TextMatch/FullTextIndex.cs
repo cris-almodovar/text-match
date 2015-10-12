@@ -1,11 +1,13 @@
-﻿using FlexLucene.Analysis;
-using FlexLucene.Document;
-using FlexLucene.Index;
-using FlexLucene.Queryparser.Classic;
-using FlexLucene.Search;
-using FlexLucene.Store;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Lucene.Net.Analysis;
+using Lucene.Net.Contrib.Management;
+using Lucene.Net.Documents;
+using Lucene.Net.Index;
+using Lucene.Net.QueryParsers;
+using Lucene.Net.Search;
+using Lucene.Net.Store;
+using LuceneVersion = Lucene.Net.Util.Version;
 
 namespace TextMatch
 {
@@ -16,8 +18,8 @@ namespace TextMatch
     {
         private Directory _directory;
         private Analyzer _analyzer;
-        private IndexWriter _writer;        
-        private QueryParser _queryParser;        
+        private IndexWriter _writer;            
+        private QueryParser _queryParser; 
         private SearcherManager _searcherManager;
 
         /// <summary>
@@ -25,17 +27,16 @@ namespace TextMatch
         /// </summary>
         /// <param name="enableStemming">if set to <c>true</c>, words are stemmed using the Porter stemming algorithm.</param>
         /// <param name="ignoreCase">if set to <c>true</c>, casing is ignored.</param>
-        /// <param name="stopTokensPattern">A regular expression that will be used to tokenize the texts that are added to the index.</param>
-        public FullTextIndex(bool enableStemming = true, bool ignoreCase = true, string stopTokensPattern = null)
+        /// <param name="separatorChars">A regular expression that will be used to tokenize the texts that are added to the index.</param>
+        public FullTextIndex(bool enableStemming = true, bool ignoreCase = true, string separatorChars = null)
         {
             _directory = new RAMDirectory();
-            _analyzer = new CustomAnalyzer(stopTokensPattern, enableStemming, ignoreCase);            
+            _analyzer = new CustomAnalyzer(separatorChars, enableStemming, ignoreCase); 
+            
+            _writer = new IndexWriter(_directory, _analyzer, IndexWriter.MaxFieldLength.UNLIMITED);            
+            _searcherManager = new SearcherManager(_writer);
 
-            var config = new IndexWriterConfig(_analyzer);
-            _writer = new IndexWriter(_directory, config);
-            _searcherManager = new SearcherManager(_writer, true, null);
-
-            _queryParser = new QueryParser("text", _analyzer); 
+            _queryParser = new QueryParser(LuceneVersion.LUCENE_30, "text", _analyzer); 
         }
 
         /// <summary>
@@ -47,14 +48,14 @@ namespace TextMatch
             for (var index = 0; index < texts.Count; index++)
             {
                 var document = CreateDocument();
-                document.GetField("id").SetStringValue(index.ToString());
-                document.GetField("text").SetStringValue(texts[index] ?? String.Empty);
+                document.GetField("id").SetValue(index.ToString());
+                document.GetField("text").SetValue(texts[index] ?? String.Empty);
 
                 _writer.AddDocument(document);
             }
 
             _writer.Commit();
-            _searcherManager.MaybeRefresh();
+            _searcherManager.MaybeReopen();      
         }
 
         /// <summary>
@@ -69,8 +70,8 @@ namespace TextMatch
         private Document CreateDocument()
         {
             var document = new Document();
-            document.Add(new StringField("id", "", Field.Store.YES));
-            document.Add(new TextField("text", "", Field.Store.NO));
+            document.Add(new Field("id", "", Field.Store.YES, Field.Index.NOT_ANALYZED));
+            document.Add(new Field("text", "", Field.Store.NO, Field.Index.ANALYZED));
 
             return document;
         }
@@ -97,9 +98,9 @@ namespace TextMatch
             if (query == null)
                 throw new InvalidQueryException("The query expression is not initialized.");
 
-            var searcher = _searcherManager.Acquire() as IndexSearcher;
-            try
-            {
+
+            using (var searcher = _searcherManager.Acquire().Searcher)
+            {                
                 var maxDocs = topN ?? Int32.MaxValue;
                 var topDocs = searcher.Search(query, maxDocs);
 
@@ -108,16 +109,13 @@ namespace TextMatch
                     foreach (var sd in topDocs.ScoreDocs)
                     {
                         var doc = searcher.Doc(sd.Doc);
-                        var id = doc.GetField("id").stringValue();
+                        var id = doc.GetField("id").StringValue;
 
                         yield return Int32.Parse(id);
                     }
                 }
             }
-            finally
-            {
-                _searcherManager.Release(searcher);
-            } 
+           
         }
         
 
@@ -125,13 +123,13 @@ namespace TextMatch
         /// Breaks up the specified text into tokens.
         /// </summary>
         /// <param name="text">The text to tokenize.</param>
-        /// <param name="stopTokensRegex">The stop tokens regular expression.</param>
+        /// <param name="separatorChars">The stop tokens regular expression.</param>
         /// <param name="enableStemming">if set to <c>true</c>, the text will be stemmed.</param>
         /// <param name="ignoreCase">if set to <c>true</c>, case is ignored..</param>
         /// <returns></returns>
-        public static IEnumerable<string> Tokenize(string text, string stopTokensRegex = CustomAnalyzer.DEFAULT_STOP_TOKENS_REGEX, bool enableStemming = true, bool ignoreCase = true)
+        public static IEnumerable<string> Tokenize(string text, string separatorChars = CustomTokenizer.DEFAULT_SEPARATOR_CHARS, bool enableStemming = true, bool ignoreCase = true)
         {
-            return CustomAnalyzer.Tokenize(text, stopTokensRegex, enableStemming, ignoreCase);  
+            return CustomAnalyzer.Tokenize(text, separatorChars, enableStemming, ignoreCase);  
         }
 
         /// <summary>
@@ -139,9 +137,8 @@ namespace TextMatch
         /// </summary>
         public void Dispose()
         {
-            //_reader.Close();
-            _searcherManager.Close();
-            _writer.Close();
+            _searcherManager.Dispose();
+            _writer.Dispose();
         }        
     }
 
