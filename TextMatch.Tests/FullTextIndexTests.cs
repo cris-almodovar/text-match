@@ -152,7 +152,7 @@ namespace TextMatch.Tests
         [TestMethod]
         public void Can_Match_Multiple_Expressions_To_Single_Text()
         {
-            // We can have one text and run it against a list of query expressions
+            // We can have one text and match it against a list of query expressions
             var text = "While jogging last night, I saw a rocketship streaking across the dark moonless sky - at five times the speed of sound!!!";        
             var queryExpressions = new[]
             {
@@ -163,10 +163,36 @@ namespace TextMatch.Tests
             };
 
             var result = text.Match(queryExpressions);
-            var expected = new List<int> { 0, 1, 2 };
+            var expected = new [] { 0, 1, 2 };
             var actual = result;
 
             Assert.IsTrue(expected.SequenceEqual(actual));
+        }
+
+        [TestMethod]
+        public void Can_Match_Using_Fuzzy_Search()
+        {
+            // We want to search for texts containing words that are close in spelling to "streak"
+            // this will match "stream"
+            var result = _apodArticles.Match("streak~");     
+            var expected = new[] { 0, 13, 12 };    // The expression matches articles #0, #13, and #12
+            var actual = result;
+
+            Assert.IsTrue(expected.SequenceEqual(actual));
+
+        }
+
+
+        [TestMethod]
+        public void Can_Match_Using_Wildcards()
+        {
+            // We want to search for texts that start with black            
+            var result = _apodArticles.Match("space AND explo*");
+            var expected = new[] { 11 };    // The expression matches article #11
+            var actual = result;
+
+            Assert.IsTrue(expected.SequenceEqual(actual));
+
         }
     }
 }

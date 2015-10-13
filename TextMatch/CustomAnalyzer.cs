@@ -13,22 +13,23 @@ namespace TextMatch
     {
         private string _separatorChars;
         private bool _enableStemming;
-        private bool _ignoreCase;        
+        private bool _ignoreCase;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CustomAnalyzer" /> class.
         /// </summary>
-        /// <param name="separatorChars">A string, whose individual characters will be used to break up the text into tokens.</param>
-        /// <param name="enableStemming">if set to <c>true</c> the tokens generated will be stemmed using the Porter stemming algorithm.</param>
-        /// <param name="ignoreCase">if set to <c>true</c> the tokens generated will be converted to lowercase, to enforce case-insensitive search.</param>
-        public CustomAnalyzer(string separatorChars = CustomTokenizer.DEFAULT_SEPARATOR_CHARS, bool enableStemming = true, bool ignoreCase = true)
+        /// <param name="enableStemming">if set to <c>true</c>, the FullTextIndex will stem 
+        /// the tokens that make up the texts, using the Porter stemming algorithm.</param>
+        /// <param name="ignoreCase">if set to <c>true</c>, character casing is ignored.</param>
+        /// <param name="separatorChars">A string whose component characters will be used to split the texts into tokens.</param>   
+        public CustomAnalyzer(bool enableStemming = true, bool ignoreCase = true, string separatorChars = CustomTokenizer.DEFAULT_SEPARATOR_CHARS)
         {
             if (String.IsNullOrWhiteSpace(separatorChars))
                 separatorChars = CustomTokenizer.DEFAULT_SEPARATOR_CHARS;
-
-            _separatorChars = separatorChars;
+            
             _enableStemming = enableStemming;
             _ignoreCase = ignoreCase;
+            _separatorChars = separatorChars;
         }
 
         /// <summary>
@@ -47,19 +48,20 @@ namespace TextMatch
 
             return stream;
         }
-        
+
 
         /// <summary>
         /// Breaks up the text into tokens.
         /// </summary>
         /// <param name="text">The text.</param>
-        /// <param name="separatorChars">The stop tokens regex to be used in breaking up the text.</param>
-        /// <param name="enableStemming">if set to <c>true</c> the tokens generated will be stemmed using the Porter stemming algorithm.</param>    
-        /// <param name="ignoreCase">if set to <c>true</c> the tokens generated will be converted to lowercase, to enforce case-insensitive search.</param>
+        /// <param name="enableStemming">if set to <c>true</c>, the FullTextIndex will stem 
+        /// the tokens that make up the texts, using the Porter stemming algorithm.</param>
+        /// <param name="ignoreCase">if set to <c>true</c>, character casing is ignored.</param>
+        /// <param name="separatorChars">A string whose component characters will be used to split the texts into tokens.</param> 
         /// <returns></returns>
-        public static IEnumerable<string> Tokenize(string text, string separatorChars = CustomTokenizer.DEFAULT_SEPARATOR_CHARS, bool enableStemming = true, bool ignoreCase = true)
+        public static IEnumerable<string> Tokenize(string text, bool enableStemming = true, bool ignoreCase = true, string separatorChars = CustomTokenizer.DEFAULT_SEPARATOR_CHARS)
         {
-            using (var analyzer = new CustomAnalyzer(separatorChars, enableStemming, ignoreCase))
+            using (var analyzer = new CustomAnalyzer(enableStemming, ignoreCase, separatorChars))
             {                
                 using (var stream = analyzer.TokenStream("text", new StringReader(text)))
                 {

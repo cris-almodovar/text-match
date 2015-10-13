@@ -25,13 +25,14 @@ namespace TextMatch
         /// <summary>
         /// Initializes a new instance of the <see cref="FullTextIndex" /> class.
         /// </summary>
-        /// <param name="enableStemming">if set to <c>true</c>, words are stemmed using the Porter stemming algorithm.</param>
-        /// <param name="ignoreCase">if set to <c>true</c>, casing is ignored.</param>
-        /// <param name="separatorChars">A regular expression that will be used to tokenize the texts that are added to the index.</param>
-        public FullTextIndex(bool enableStemming = true, bool ignoreCase = true, string separatorChars = null)
+        /// <param name="enableStemming">if set to <c>true</c>, the FullTextIndex will stem 
+        /// the tokens that make up the texts, using the Porter stemming algorithm.</param>
+        /// <param name="ignoreCase">if set to <c>true</c>, character casing is ignored.</param>
+        /// <param name="separatorChars">A string whose component characters will be used to split the texts into tokens.</param>
+        public FullTextIndex(bool enableStemming = true, bool ignoreCase = true, string separatorChars = CustomTokenizer.DEFAULT_SEPARATOR_CHARS)
         {
             _directory = new RAMDirectory();
-            _analyzer = new CustomAnalyzer(separatorChars, enableStemming, ignoreCase); 
+            _analyzer = new CustomAnalyzer(enableStemming, ignoreCase, separatorChars); 
             
             _writer = new IndexWriter(_directory, _analyzer, IndexWriter.MaxFieldLength.UNLIMITED);            
             _searcherManager = new SearcherManager(_writer);
@@ -81,7 +82,7 @@ namespace TextMatch
         /// </summary>
         /// <param name="queryExpression">The query expression.</param>
         /// <param name="topN">The limit on the number of matching texts to return.</param>
-        /// <returns></returns>
+        /// <returns>The index positions of the texts that match the query expression.</returns>
         public IEnumerable<int> Search(string queryExpression, int? topN = null)
         { 
             Query query = null;       
@@ -117,19 +118,20 @@ namespace TextMatch
             }
            
         }
-        
+
 
         /// <summary>
         /// Breaks up the specified text into tokens.
         /// </summary>
         /// <param name="text">The text to tokenize.</param>
-        /// <param name="separatorChars">The stop tokens regular expression.</param>
-        /// <param name="enableStemming">if set to <c>true</c>, the text will be stemmed.</param>
-        /// <param name="ignoreCase">if set to <c>true</c>, case is ignored..</param>
+        /// <param name="enableStemming">if set to <c>true</c>, the FullTextIndex will stem 
+        /// the tokens that make up the texts, using the Porter stemming algorithm.</param>
+        /// <param name="ignoreCase">if set to <c>true</c>, character casing is ignored.</param>
+        /// <param name="separatorChars">A string whose component characters will be used to split the texts into tokens.</param>              
         /// <returns></returns>
-        public static IEnumerable<string> Tokenize(string text, string separatorChars = CustomTokenizer.DEFAULT_SEPARATOR_CHARS, bool enableStemming = true, bool ignoreCase = true)
+        public static IEnumerable<string> Tokenize(string text, bool enableStemming = true, bool ignoreCase = true, string separatorChars = CustomTokenizer.DEFAULT_SEPARATOR_CHARS)
         {
-            return CustomAnalyzer.Tokenize(text, separatorChars, enableStemming, ignoreCase);  
+            return CustomAnalyzer.Tokenize(text, enableStemming, ignoreCase, separatorChars);  
         }
 
         /// <summary>
