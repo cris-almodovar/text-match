@@ -1,2 +1,7 @@
 # text-match
-TextMatch is a library for searching inside texts using Lucene query expressions. Supports all types of Lucene query expressions - boolean, wildcard, fuzzy. Options are available for tweaking tokenization, such as case-sensitivity and word stemming.
+TextMatch is a library for matching text strings against Lucene query expressions. If you have a large collection of text strings, and you need to find out which ones match certain text patterns - TextMatch can help! For this type of requirement, TextMatch is easier to use than regular expressions.
+
+## Usage
+See the TextMatch.Tests project
+
+
