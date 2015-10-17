@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
 using System.Linq;
+using System.Diagnostics;
 
 namespace TextMatch.Tests
 {
@@ -166,7 +167,71 @@ namespace TextMatch.Tests
             var expected = new [] { 0, 1, 2 };
             var actual = result;
 
+
             Assert.IsTrue(expected.SequenceEqual(actual));
+        }
+
+        [TestMethod]
+        public void Can_Match_Multiple_Expressions_To_Multiple_Texts_NonCached()
+        {
+            var queryExpressions = new[]
+            {
+                @"""rocketship dark sky""",
+                @"""starry night""",
+                @"""sound barrier""",
+                @"""meteor shower""~2 OR perseid",
+                @"""horse with no name""",
+                @"""magellanic clouds"" AND ""star formation""",
+                @"""background radiation""",
+                @"""hubble space telescope""",
+                @"""saturn white spot""~2",
+                @"""distance to andromeda""",
+                @"""chinese space observatory"""
+            };
+
+
+            var multiResults = _apodArticles.Match(queryExpressions, cacheQuery: false);
+
+            for (var i = 0; i < _apodArticles.Count; i++)
+            {
+                var text = _apodArticles[i];
+                var expected = text.Match(queryExpressions);
+                var actual = multiResults[i];
+
+                Assert.IsTrue(expected.SequenceEqual(actual));
+            }
+        }
+
+
+        [TestMethod]
+        public void Can_Match_Multiple_Expressions_To_Multiple_Texts_Cached()
+        {
+            var queryExpressions = new[]
+            {
+                @"""rocketship dark sky""",
+                @"""starry night""",
+                @"""sound barrier""",
+                @"""meteor shower""~2 OR perseid",
+                @"""horse with no name""",
+                @"""magellanic clouds"" AND ""star formation""",
+                @"""background radiation""",
+                @"""hubble space telescope""",
+                @"""saturn white spot""~2",
+                @"""distance to andromeda""",
+                @"""chinese space observatory"""
+            };
+
+
+            var multiResults = _apodArticles.Match(queryExpressions, cacheQuery: true);
+
+            for (var i = 0; i < _apodArticles.Count; i++)
+            {
+                var text = _apodArticles[i];
+                var expected = text.Match(queryExpressions);
+                var actual = multiResults[i];
+
+                Assert.IsTrue(expected.SequenceEqual(actual));
+            }
         }
 
         [TestMethod]

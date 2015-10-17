@@ -8,6 +8,7 @@ using Lucene.Net.QueryParsers;
 using Lucene.Net.Search;
 using Lucene.Net.Store;
 using LuceneVersion = Lucene.Net.Util.Version;
+using System.Collections.Concurrent;
 
 namespace TextMatch
 {
@@ -21,6 +22,7 @@ namespace TextMatch
         private IndexWriter _writer;            
         private QueryParser _queryParser; 
         private SearcherManager _searcherManager;
+        private ConcurrentDictionary<string, Query> _queryCache;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FullTextIndex" /> class.
@@ -37,7 +39,8 @@ namespace TextMatch
             _writer = new IndexWriter(_directory, _analyzer, IndexWriter.MaxFieldLength.UNLIMITED);            
             _searcherManager = new SearcherManager(_writer);
 
-            _queryParser = new QueryParser(LuceneVersion.LUCENE_30, "text", _analyzer); 
+            _queryParser = new QueryParser(LuceneVersion.LUCENE_30, "text", _analyzer);
+            _queryCache = new ConcurrentDictionary<string, Query>();
         }
 
         /// <summary>
@@ -68,6 +71,18 @@ namespace TextMatch
             Add(new[] { text });
         }
 
+        /// <summary>
+        /// Removes all texts from the index.
+        /// </summary>
+        public void Clear(bool clearQueryCache = true)
+        {
+            _writer.DeleteAll();
+            _searcherManager.MaybeReopen();
+
+            if (clearQueryCache)
+                _queryCache.Clear();
+        }
+
         private Document CreateDocument()
         {
             var document = new Document();
@@ -82,23 +97,38 @@ namespace TextMatch
         /// </summary>
         /// <param name="queryExpression">The query expression.</param>
         /// <param name="topN">The limit on the number of matching texts to return.</param>
-        /// <returns>The index positions of the texts that match the query expression.</returns>
-        public IEnumerable<int> Search(string queryExpression, int? topN = null)
+        /// <param name="cacheQuery">if set to <c>true</c> the query expression is cached.
+        /// This can increase performance if the query expression is complex, and is repeatedly 
+        /// used to search the texts.</param>
+        /// <returns>
+        /// The index positions of the texts that match the query expression.
+        /// </returns>
+        /// <exception cref="TextMatch.InvalidQueryException">
+        /// The query expression is not initialized.
+        /// </exception>
+        public IEnumerable<int> Search(string queryExpression, int? topN = null, bool cacheQuery = false)
         { 
-            Query query = null;       
-            try
-            {
-                query = _queryParser.Parse(queryExpression);
+            Query query = null;
+            if (cacheQuery)
+                _queryCache.TryGetValue(queryExpression, out query);
 
-            }
-            catch (ParseException e)
+            if (query == null)
             {
-                throw new InvalidQueryException(String.Format("The queryExpression is invalid: {0}.", queryExpression), e);
-            }
+                try
+                {
+                    query = _queryParser.Parse(queryExpression);
+                }
+                catch (ParseException e)
+                {
+                    throw new InvalidQueryException(String.Format("The queryExpression is invalid: {0}.", queryExpression), e);
+                }
+
+                if (cacheQuery)
+                    _queryCache[queryExpression] = query;
+            }            
 
             if (query == null)
                 throw new InvalidQueryException("The query expression is not initialized.");
-
 
             using (var searcher = _searcherManager.Acquire().Searcher)
             {                
