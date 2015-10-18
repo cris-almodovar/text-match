@@ -26,10 +26,10 @@ namespace TextMatch
         }
 
         /// <summary>
-        /// Performs a full-text search match on a single text string, using multiple query expressions.
+        /// Performs a full-text search match on a single text string, using multiple Lucene query expressions.
         /// </summary>
         /// <param name="text">The text to be searched/matched.</param>
-        /// <param name="queryExpressions">A list of Lucene query expressions.</param>
+        /// <param name="queryExpressions">The list of Lucene query expressions.</param>
         /// <param name="topN">The limit on the number of matching query expressions to return.</param>        
         /// <returns>
         /// A MatchResult object containing the status of the operation, and if successful,
@@ -61,55 +61,50 @@ namespace TextMatch
         }
 
         /// <summary>
-        /// Performs a full-text search match on a list of texts, using multiple query expressions.
+        /// Performs a full-text search match on a list of texts, using multiple Lucene query expressions.
         /// </summary>
-        /// <param name="texts">The texts.</param>
+        /// <param name="texts">The text to be searched/matched.</param>
         /// <param name="queryExpressions">The list of Lucene query expressions.</param>
-        /// <param name="topN">The limit on the number of matching texts to return.</param>
+        /// <param name="topN">The limit on the number of matching query expressions to return, for each text.</param>
         /// <param name="cacheQuery">if set to <c>true</c> the query expressions are cached.
         /// This can increase performance if the query expressions are complex and/or the number
         /// of query expressions is large, and the query expressions are repeatedly used 
         /// (i.e. in a loop) to search/match the texts.</param>
         /// <returns>
-        /// A MultiMatchResult object containing the status of the operation, and if successful,
-        /// a list where the index represents the text number and the contents is a list
-        /// of  query expressions that matched the text.
+        /// A list of MatchResult objects containing the status of the operation for each text.
         /// </returns>
-        public static MultiMatchResult Match(this IList<string> texts, IList<string> queryExpressions, int? topN = null, bool cacheQuery = false)
+        public static List<MatchResult> Match(this IList<string> texts, IList<string> queryExpressions, int? topN = null, bool cacheQuery = true)
         {
             using (var index = new FullTextIndex())
             {
-                topN = topN ?? texts.Count;
-                var matches = new Dictionary<int, IList<int>>();
-                var matchesCount = 0;
+                topN = topN ?? queryExpressions.Count;
+                var matches = new List<MatchResult>();                
 
                 for (var textId = 0; textId < texts.Count; textId++)
                 {
+                    // Process the current text; match it against each quey expression.
+
                     var text = texts[textId];
-                    index.Add(text);
+                    index.Add(text);                    
 
                     var matchingExpressions = new List<int>();
-
                     for (var queryId = 0; queryId < queryExpressions.Count; queryId++)
                     {
                         var query = queryExpressions[queryId];
 
                         if (index.Search(query, cacheQuery: cacheQuery).Count() > 0)                        
-                            matchingExpressions.Add(queryId);   
-                    }                    
+                            matchingExpressions.Add(queryId);
+
+                        if (matchingExpressions.Count > topN)
+                            break;   
+                    }
                     
-                    matches[textId] = matchingExpressions;
+                    matches.Add(new MatchResult(matchingExpressions));
 
-                    if (matchingExpressions.Count > 0)
-                        matchesCount += 1;
-
-                    if (matchesCount >= topN)
-                        break;
-
-                    index.Clear(!cacheQuery);
+                    index.Clear(!cacheQuery); // Do not clear the query cache, unless we are not caching query expressions
                 }
 
-                return new MultiMatchResult(matches);
+                return matches;
             }
         }
     }

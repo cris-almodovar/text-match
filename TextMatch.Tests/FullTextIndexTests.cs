@@ -172,7 +172,7 @@ namespace TextMatch.Tests
         }
 
         [TestMethod]
-        public void Can_Match_Multiple_Expressions_To_Multiple_Texts_NonCached()
+        public void Can_Match_Multiple_Expressions_To_Multiple_Texts_QueryExpressions_Not_Cached()
         {
             var queryExpressions = new[]
             {
@@ -189,22 +189,22 @@ namespace TextMatch.Tests
                 @"""chinese space observatory"""
             };
 
-
-            var multiResults = _apodArticles.Match(queryExpressions, cacheQuery: false);
+            var results = _apodArticles.Match(queryExpressions, cacheQuery: false);
 
             for (var i = 0; i < _apodArticles.Count; i++)
             {
                 var text = _apodArticles[i];
                 var expected = text.Match(queryExpressions);
-                var actual = multiResults[i];
+                var actual = results[i];
 
+                Assert.AreEqual<bool>(expected.Success, actual.Success);
                 Assert.IsTrue(expected.SequenceEqual(actual));
             }
         }
 
 
         [TestMethod]
-        public void Can_Match_Multiple_Expressions_To_Multiple_Texts_Cached()
+        public void Can_Match_Multiple_Expressions_To_Multiple_Texts_QueryExpressions_Cached()
         {
             var queryExpressions = new[]
             {
@@ -221,15 +221,15 @@ namespace TextMatch.Tests
                 @"""chinese space observatory"""
             };
 
-
-            var multiResults = _apodArticles.Match(queryExpressions, cacheQuery: true);
+            var results = _apodArticles.Match(queryExpressions, cacheQuery: true);
 
             for (var i = 0; i < _apodArticles.Count; i++)
             {
                 var text = _apodArticles[i];
                 var expected = text.Match(queryExpressions);
-                var actual = multiResults[i];
+                var actual = results[i];
 
+                Assert.AreEqual<bool>(expected.Success, actual.Success);
                 Assert.IsTrue(expected.SequenceEqual(actual));
             }
         }
