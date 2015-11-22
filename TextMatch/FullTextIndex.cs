@@ -20,7 +20,7 @@ namespace TextMatch
         private Directory _directory;
         private Analyzer _analyzer;
         private IndexWriter _writer;            
-        private QueryParser _queryParser; 
+        //private QueryParser _queryParser; 
         private SearcherManager _searcherManager;
         private ConcurrentDictionary<string, Query> _queryCache;
 
@@ -38,8 +38,7 @@ namespace TextMatch
             
             _writer = new IndexWriter(_directory, _analyzer, IndexWriter.MaxFieldLength.UNLIMITED);            
             _searcherManager = new SearcherManager(_writer);
-
-            _queryParser = new QueryParser(LuceneVersion.LUCENE_30, "text", _analyzer);
+            
             _queryCache = new ConcurrentDictionary<string, Query>();
         }
 
@@ -116,7 +115,8 @@ namespace TextMatch
             {
                 try
                 {
-                    query = _queryParser.Parse(queryExpression);
+                    var queryParser = new QueryParser(LuceneVersion.LUCENE_30, "text", _analyzer);
+                    query = queryParser.Parse(queryExpression);
                 }
                 catch (ParseException e)
                 {
